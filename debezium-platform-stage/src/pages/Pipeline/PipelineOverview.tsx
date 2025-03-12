@@ -41,7 +41,7 @@ type PipelineOverviewProp = {
 };
 
 const PipelineOverview: FC<PipelineOverviewProp> = ({ pipelineId }) => {
-  const [pipeline, setPipeline] = useState<Pipeline>();
+  // const [pipeline, setPipeline] = useState<Pipeline>();
   const [source, setSource] = useState<Source>();
   const [transforms, setTransforms] = useState<Transform[]>([]);
   const [destination, setDestination] = useState<Destination>();
@@ -52,65 +52,110 @@ const PipelineOverview: FC<PipelineOverviewProp> = ({ pipelineId }) => {
     useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchPipeline = async () => {
-      setIsFetchLoading(true);
-      const response = await fetchDataTypeTwo<Pipeline>(
+  // useEffect(() => {
+  //   const fetchPipeline = async () => {
+  //     setIsFetchLoading(true);
+  //     const response = await fetchDataTypeTwo<Pipeline>(
+  //       `${API_URL}/api/pipelines/${pipelineId}`
+  //     );
+
+  //     if (response.error) {
+  //       setError(response.error);
+  //     } else {
+  //       setPipeline(response.data as Pipeline);
+  //       setTransforms(response.data?.transforms as Transform[]);
+  //     }
+
+  //     setIsFetchLoading(false);
+  //   };
+
+  //   fetchPipeline();
+  // }, [pipelineId]);
+
+  // useEffect(() => {
+  //   const fetchSource = async () => {
+  //     setIsSourceFetchLoading(true);
+  //     const response = await fetchDataTypeTwo<Source>(
+  //       `${API_URL}/api/sources/${pipeline!.source.id}`
+  //     );
+
+  //     if (response.error) {
+  //       setError(response.error);
+  //     } else {
+  //       setSource(response.data as Source);
+  //     }
+  //     setIsSourceFetchLoading(false);
+  //   };
+
+  //   if (pipeline?.source?.id) {
+  //     fetchSource();
+  //   }
+  // }, [pipeline]);
+
+  // useEffect(() => {
+  //   const fetchDestination = async () => {
+  //     setIsDestinationFetchLoading(true);
+  //     const response = await fetchDataTypeTwo<Destination>(
+  //       `${API_URL}/api/destinations/${pipeline!.destination.id}`
+  //     );
+
+  //     if (response.error) {
+  //       setError(response.error);
+  //     } else {
+  //       setDestination(response.data as Destination);
+  //     }
+  //     setIsDestinationFetchLoading(false);
+  //   };
+
+  //   if (pipeline?.source?.id) {
+  //     fetchDestination();
+  //   }
+  // }, [pipeline]);
+
+  // Fetch all data in parallel rather than sequentially
+useEffect(() => {
+  const fetchData = async () => {
+    setIsFetchLoading(true);
+    try {
+      // Get pipeline data
+      const pipelineResponse = await fetchDataTypeTwo<Pipeline>(
         `${API_URL}/api/pipelines/${pipelineId}`
       );
-
-      if (response.error) {
-        setError(response.error);
-      } else {
-        setPipeline(response.data as Pipeline);
-        setTransforms(response.data?.transforms as Transform[]);
+      
+      if (pipelineResponse.error) {
+        throw new Error(pipelineResponse.error);
       }
-
+      
+      const pipelineData = pipelineResponse.data as Pipeline;
+      // setPipeline(pipelineData);
+      setTransforms(pipelineData.transforms as Transform[]);
+      
+      // Fetch source and destination in parallel if IDs are available
+      if (pipelineData?.source?.id && pipelineData?.destination?.id) {
+        const [sourceResponse, destinationResponse] = await Promise.all([
+          fetchDataTypeTwo<Source>(`${API_URL}/api/sources/${pipelineData.source.id}`),
+          fetchDataTypeTwo<Destination>(`${API_URL}/api/destinations/${pipelineData.destination.id}`)
+        ]);
+        
+        if (!sourceResponse.error) {
+          setSource(sourceResponse.data as Source);
+        }
+        
+        if (!destinationResponse.error) {
+          setDestination(destinationResponse.data as Destination);
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
       setIsFetchLoading(false);
-    };
-
-    fetchPipeline();
-  }, [pipelineId]);
-
-  useEffect(() => {
-    const fetchSource = async () => {
-      setIsSourceFetchLoading(true);
-      const response = await fetchDataTypeTwo<Source>(
-        `${API_URL}/api/sources/${pipeline!.source.id}`
-      );
-
-      if (response.error) {
-        setError(response.error);
-      } else {
-        setSource(response.data as Source);
-      }
       setIsSourceFetchLoading(false);
-    };
-
-    if (pipeline?.source?.id) {
-      fetchSource();
-    }
-  }, [pipeline]);
-
-  useEffect(() => {
-    const fetchDestination = async () => {
-      setIsDestinationFetchLoading(true);
-      const response = await fetchDataTypeTwo<Destination>(
-        `${API_URL}/api/destinations/${pipeline!.destination.id}`
-      );
-
-      if (response.error) {
-        setError(response.error);
-      } else {
-        setDestination(response.data as Destination);
-      }
       setIsDestinationFetchLoading(false);
-    };
-
-    if (pipeline?.source?.id) {
-      fetchDestination();
     }
-  }, [pipeline]);
+  };
+
+  fetchData();
+}, [pipelineId]);
 
   if (isFetchLoading) {
     return <div>Loading...</div>;
