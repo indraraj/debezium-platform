@@ -23,7 +23,7 @@ import {
 } from "@patternfly/react-core";
 import { API_URL } from "@utils/constants";
 import { getConnectorTypeName } from "@utils/helpers";
-import { FC, useEffect, useState } from "react";
+import { FC, memo, useEffect, useState } from "react";
 import {
   Pipeline,
   Source,
@@ -33,6 +33,13 @@ import {
 } from "src/apis/apis";
 import comingSoonImage from "../../assets/comingSoon.png";
 import "./PipelineOverview.css";
+
+// Extend the Window interface to include EVENT_BUFFER_SIZE
+declare global {
+  interface Window {
+    EVENT_BUFFER_SIZE: number;
+  }
+}
 import CompositionFlow from "@components/pipelineDesigner/CompositionFlow";
 import { ReactFlowProvider } from "reactflow";
 
@@ -157,6 +164,21 @@ useEffect(() => {
   fetchData();
 }, [pipelineId]);
 
+const CompositionFlowMemo = memo(CompositionFlow);
+
+useEffect(() => {
+  // Store original event buffer size
+  const originalSize = window.EVENT_BUFFER_SIZE;
+  
+  // Reduce event buffer size for charts to improve performance
+  window.EVENT_BUFFER_SIZE = 100;
+  
+  return () => {
+    // Restore original size on unmount
+    window.EVENT_BUFFER_SIZE = originalSize;
+  };
+}, []);
+
   if (isFetchLoading) {
     return <div>Loading...</div>;
   }
@@ -265,7 +287,7 @@ useEffect(() => {
             style={{ minHeight: "300px", height: "100%", width: "100%" }}
           >
             <ReactFlowProvider>
-              <CompositionFlow
+              <CompositionFlowMemo
                 sourceName={source?.name || ""}
                 sourceType={source?.type || ""}
                 selectedTransform={transforms}
