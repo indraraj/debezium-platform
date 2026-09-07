@@ -27,6 +27,12 @@
         "noPipelineModal": {
             "title": "Create a pipeline first",
             "description": "Alert rules evaluate metrics from pipelines. Create a pipeline before adding a rule."
+        },
+        "evaluationWindowMsg": {
+            "avg": "Average of all data points over the evaluation window.",
+            "min": "Minimum value observed over the evaluation window.",
+            "max": "Maximum value observed over the evaluation window.",
+            "sum": "Sum of all data points over the evaluation window."
         }
     },
      "event": {

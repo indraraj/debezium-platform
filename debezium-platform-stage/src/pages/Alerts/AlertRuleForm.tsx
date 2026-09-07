@@ -42,6 +42,7 @@ import {
 } from "./alertsTypes";
 import { SeverityIcon, SeverityLabel } from "./severityUtils";
 import "./Alerts.css";
+import { useTranslation } from "react-i18next";
 
 const EMPTY_DISPLAY = "—";
 
@@ -85,6 +86,8 @@ const AlertRuleForm: React.FC<AlertRuleFormProps> = ({
   onGoToChannels,
   onCanSubmitChange,
 }) => {
+
+    const { t } = useTranslation();
   const [panels, setPanels] = React.useState<PanelResponse[]>([]);
   const [panelsLoading, setPanelsLoading] = React.useState(true);
   const [panelsError, setPanelsError] = React.useState<string | null>(null);
@@ -108,10 +111,22 @@ const AlertRuleForm: React.FC<AlertRuleFormProps> = ({
     rule ? secondsToIsoDuration(rule.forDuration) : "PT0S"
   );
   const [isDurationOpen, setIsDurationOpen] = React.useState(false);
+
+  const initialIsCustom = rule
+    ? !EVALUATION_WINDOW_OPTIONS.some(
+        (o) => o.value === secondsToIsoDuration(rule.evaluationWindow)
+      )
+    : false;
+  const initialCustomMinutes = initialIsCustom && rule
+    ? String(Math.round(rule.evaluationWindow / 60))
+    : "";
+
   const [evaluationWindow, setEvaluationWindow] = React.useState(
     rule ? secondsToIsoDuration(rule.evaluationWindow) : "PT5M"
   );
   const [isWindowOpen, setIsWindowOpen] = React.useState(false);
+  const [isCustomWindowSelected, setIsCustomWindowSelected] = React.useState(initialIsCustom);
+  const [customWindowMinutes, setCustomWindowMinutes] = React.useState(initialCustomMinutes);
   const [severity, setSeverity] = React.useState<AlertSeverity>(rule?.severity ?? "WARNING");
   const [selectedChannelIds, setSelectedChannelIds] = React.useState<Set<number>>(
     new Set(rule?.channels.map((c) => c.id) ?? [])
@@ -200,7 +215,29 @@ const AlertRuleForm: React.FC<AlertRuleFormProps> = ({
   const operatorLabel = OPERATOR_OPTIONS.find((o) => o.value === operator)?.label;
   const reduceLabel = REDUCE_FUNCTION_OPTIONS.find((o) => o.value === reduceFunction)?.label;
   const durationLabel = FOR_DURATION_OPTIONS.find((o) => o.value === forDuration)?.label;
-  const windowLabel = EVALUATION_WINDOW_OPTIONS.find((o) => o.value === evaluationWindow)?.label;
+  const windowLabel = React.useMemo(() => {
+    const preset = EVALUATION_WINDOW_OPTIONS.find((o) => o.value === evaluationWindow);
+    if (preset) return preset.label;
+    const minMatch = evaluationWindow.match(/^PT(\d+)M$/);
+    if (minMatch) return `${minMatch[1]} minutes`;
+    const hrMatch = evaluationWindow.match(/^PT(\d+)H$/);
+    if (hrMatch) return `${hrMatch[1]} hour${hrMatch[1] === "1" ? "" : "s"}`;
+    return evaluationWindow;
+  }, [evaluationWindow]);
+
+  const customMinutesNum = Number(customWindowMinutes);
+  const isCustomWindowValid =
+    Number.isInteger(customMinutesNum) &&
+    customMinutesNum >= 1 &&
+    customMinutesNum <= 60;
+
+  const handleCustomWindowChange = (_e: React.FormEvent, val: string) => {
+    setCustomWindowMinutes(val);
+    const n = Number(val.trim());
+    if (Number.isInteger(n) && n >= 1 && n <= 60) {
+      setEvaluationWindow(n === 60 ? "PT1H" : `PT${n}M`);
+    }
+  };
 
   return (
     <Form id={formId} onSubmit={handleSubmit} isWidthLimited>
@@ -391,35 +428,91 @@ const AlertRuleForm: React.FC<AlertRuleFormProps> = ({
                 {viewMode ? (
                   <ReviewValue>{windowLabel}</ReviewValue>
                 ) : (
-                  <Select
-                    id="rule-window"
-                    isOpen={isWindowOpen}
-                    selected={evaluationWindow}
-                    onSelect={(_e, value) => {
-                      setEvaluationWindow(value as string);
-                      setIsWindowOpen(false);
-                    }}
-                    onOpenChange={setIsWindowOpen}
-                    toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
-                      <MenuToggle
-                        ref={toggleRef}
-                        onClick={() => setIsWindowOpen((prev) => !prev)}
-                        isExpanded={isWindowOpen}
-                        isDisabled={isSaving}
-                        style={{ width: "220px" }}
+                  <InputGroup>
+                    <InputGroupItem>
+                      <Select
+                        id="rule-window"
+                        isOpen={isWindowOpen}
+                        selected={isCustomWindowSelected ? "custom" : evaluationWindow}
+                        onSelect={(_e, value) => {
+                          if (value === "custom") {
+                            setIsCustomWindowSelected(true);
+                            setCustomWindowMinutes("");
+                          } else {
+                            setIsCustomWindowSelected(false);
+                            setCustomWindowMinutes("");
+                            setEvaluationWindow(value as string);
+                          }
+                          setIsWindowOpen(false);
+                        }}
+                        onOpenChange={setIsWindowOpen}
+                        toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+                          <MenuToggle
+                            ref={toggleRef}
+                            onClick={() => setIsWindowOpen((prev) => !prev)}
+                            isExpanded={isWindowOpen}
+                            isDisabled={isSaving}
+                            style={{ width: "220px" }}
+                          >
+                            {isCustomWindowSelected ? "Custom" : windowLabel}
+                          </MenuToggle>
+                        )}
                       >
-                        {windowLabel}
-                      </MenuToggle>
+                        <SelectList>
+                          {EVALUATION_WINDOW_OPTIONS.map((option) => (
+                            <SelectOption key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectOption>
+                          ))}
+                          <SelectOption key="custom" value="custom">
+                            {t("custom")}
+                          </SelectOption>
+                        </SelectList>
+                      </Select>
+                    </InputGroupItem>
+                    {isCustomWindowSelected && (
+                      <>
+                        <InputGroupItem>
+                          <TextInput
+                            id="rule-window-custom"
+                            type="number"
+                            min={1}
+                            max={60}
+                            value={customWindowMinutes}
+                            onChange={handleCustomWindowChange}
+                            validated={
+                              customWindowMinutes === ""
+                                ? "default"
+                                : isCustomWindowValid
+                                  ? "success"
+                                  : "error"
+                            }
+                            isDisabled={isSaving}
+                            aria-label="Custom evaluation window in minutes"
+                            style={{ width: "90px" }}
+                          />
+                        </InputGroupItem>
+                        <InputGroupItem>
+                          <Content
+                            component="p"
+                            style={{ padding: "6px 8px", whiteSpace: "nowrap" }}
+                          >
+                            {t("minutes")} (1–60)
+                          </Content>
+                        </InputGroupItem>
+                      </>
                     )}
-                  >
-                    <SelectList>
-                      {EVALUATION_WINDOW_OPTIONS.map((option) => (
-                        <SelectOption key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectOption>
-                      ))}
-                    </SelectList>
-                  </Select>
+                  </InputGroup>
+                )}
+                {!viewMode && (
+                  <HelperText>
+                    <HelperTextItem>
+                      {reduceFunction === "AVG" && t("alert:rule.evaluationWindowMsg.avg")}
+                      {reduceFunction === "MIN" && t("alert:rule.evaluationWindowMsg.min")}
+                      {reduceFunction === "MAX" && t("alert:rule.evaluationWindowMsg.max")}
+                      {reduceFunction === "SUM" && t("alert:rule.evaluationWindowMsg.sum")}
+                    </HelperTextItem>
+                  </HelperText>
                 )}
               </FormGroup>
             )}

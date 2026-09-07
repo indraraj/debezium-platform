@@ -18,6 +18,7 @@
   "copied": "Copiato",
   "copy": "Copia",
   "create": "Crea",
+  "custom": "Costume",
   "dark": "Scuro",
   "darkMode": "Usa sempre la modalità scura",
   "delete": "Elimina",
@@ -77,6 +78,7 @@
   "light": "Chiaro",
   "lightMode": "Usa sempre la modalità chiara",
   "loading": "Caricamento...",
+  "minutes": "minuti",
   "name": "Nome",
   "pipeline": "Pipelines",
   "refresh": "Aggiorna",
@@ -128,7 +130,7 @@
       "dataTableTitle": "{{val}} database"
     }
   },
-  "navigation":{
+  "navigation": {
     "source": "Origini",
     "destination": "Destinazioni",
     "pipeline": "Pipeline",
@@ -139,7 +141,7 @@
     "rule": "Regole",
     "channel": "Canali"
   },
-  "breadcrumb":{
+  "breadcrumb": {
     "pipeline": "Pipeline",
     "pipelineDesigner": "Designer della pipeline",
     "createResource": "Crea {{val}}",

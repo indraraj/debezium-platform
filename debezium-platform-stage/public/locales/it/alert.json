@@ -27,6 +27,12 @@
         "noPipelineModal": {
             "title": "Crea prima una pipeline",
             "description": "Le regole di avviso valutano le metriche delle pipeline. Crea una pipeline prima di aggiungere una regola."
+        },
+        "evaluationWindowMsg": {
+            "avg": "Media di tutti i punti dati nell'intervallo di valutazione.",
+            "min": "Valore minimo osservato nell'intervallo di valutazione.",
+            "max": "Valore massimo osservato nell'intervallo di valutazione.",
+            "sum": "Somma di tutti i punti dati nell'intervallo di valutazione."
         }
     },
     "event": {

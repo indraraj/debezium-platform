@@ -147,7 +147,7 @@ const EditAlertRule: React.FunctionComponent = () => {
           subtitle="Update the threshold, severity, or notification channels for this rule."
           icon={
             <Icon size="2xl" className="custom-header_icon">
-              <RhUiNotificationIcon />
+              <RhUiTaskIcon  />
             </Icon>
           }
         />

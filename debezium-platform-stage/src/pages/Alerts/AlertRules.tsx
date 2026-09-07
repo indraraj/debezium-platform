@@ -159,13 +159,15 @@ const AlertRules: React.FC<AlertRulesProps> = ({ firingRuleIds }) => {
     onClearSearch();
   };
 
+  console.log("Pipeline present:", isNoPipelineModalOpen)
+
   const refreshRules = () => queryClient.invalidateQueries(ALERT_RULES_QUERY_KEY);
 
   const openCreatePage = () => {
-    if (!pipelinesError && pipelinesList.length === 0) {
-      setIsNoPipelineModalOpen(true);
-      return;
-    }
+    // if (!pipelinesError && pipelinesList.length === 0) {
+    //   setIsNoPipelineModalOpen(true);
+    //   return;
+    // }
     navigate("/alerts/rules/create_rule");
   };
 
@@ -426,7 +428,7 @@ const AlertRules: React.FC<AlertRulesProps> = ({ firingRuleIds }) => {
       )}
 
       <InformationModal
-        isOpen={isNoPipelineModalOpen}
+        isOpen={false}
         onClose={() => setIsNoPipelineModalOpen(false)}
         title={t("alert:rule.noPipelineModal.title")}
         primaryAction={{
