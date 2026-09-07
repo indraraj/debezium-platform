@@ -159,7 +159,7 @@ const AlertRules: React.FC<AlertRulesProps> = ({ firingRuleIds }) => {
     onClearSearch();
   };
 
-  console.log("Pipeline present:", isNoPipelineModalOpen)
+  console.log("Pipeline,Error,List size", isNoPipelineModalOpen, pipelinesError, pipelinesList)
 
   const refreshRules = () => queryClient.invalidateQueries(ALERT_RULES_QUERY_KEY);
 
